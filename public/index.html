@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pinterest Scraper</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        max-width: 600px;
+        margin: 50px auto;
+        text-align: center;
+      }
+      input {
+        padding: 10px;
+        width: 80%;
+      }
+      button {
+        padding: 10px 20px;
+        margin-top: 10px;
+      }
+      .result {
+        margin-top: 20px;
+      }
+      .badge {
+        font-weight: bold;
+        color: green;
+      }
+      .post {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Pinterest Scraper</h1>
+
+      <!-- Section for scraping user profile -->
+      <input type="text" id="username" placeholder="Enter Pinterest username" />
+      <button onclick="getUserData()">Get User Data</button>
+
+      <div class="result" id="result">
+        <p><strong>Profile Name:</strong> <span id="profilename">N/A</span></p>
+        <p><strong>Followers:</strong> <span id="followers">N/A</span></p>
+        <p><strong>Following:</strong> <span id="following">N/A</span></p>
+        <p>
+          <strong>Badge Status:</strong>
+          <span id="badge" class="badge">N/A</span>
+        </p>
+        <p></p>
+          <strong>Badge Status:</strong>
+          <span id="Pinnerbadge" class="badge">N/A</span>
+        </p>
+      </div>
+
+      <!-- Section for scraping Pinterest post -->
+      <hr />
+
+      <div class="input-form">
+        <input type="text" id="post-url" placeholder="Enter Pinterest Post URL" style="width: 80%; padding: 8px" />
+        <button onclick="fetchPostData()">Fetch Post</button>
+      </div>
+      
+      <div class="post" style="display: none" id="post-details">
+        <h1 id="headline"></h1>
+        <img id="thumbnail" src="" alt="Video Thumbnail" style="width: 100%; display: none;" />
+        <div id="post-media"></div> 
+        <p id="author"></p>
+        <p id="author-profile"></p>
+        <p id="followers"></p>
+        <p id="comment-count"></p>
+        <p id="date"></p>
+        <p id="description"></p>
+      </div>
+    </div>
+
+    <script>
+      async function getUserData() {
+        const username = document.getElementById("username").value;
+        if (!username) {
+          alert("Please enter a username");
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/user/${username}`);
+          const data = await response.json();
+
+          if (data.error) {
+            document.getElementById("result").innerHTML =
+              "<p>Error fetching user data.</p>";
+          } else {
+            document.getElementById("followers").textContent = data.followers;
+            document.getElementById("following").textContent = data.following;
+            document.getElementById("profilename").textContent =
+              data.ProfileName;
+            document.getElementById("badge").textContent = data.badge;
+            document.getElementById("Pinnerbadge").textContent = data.Pinnerbadge;
+          }
+        } catch (error) {
+          document.getElementById("result").innerHTML =
+            "<p>Error fetching user data.</p>";
+        }
+      }
+
+      async function fetchPostData() {
+        const postUrl = document.getElementById("post-url").value;
+
+        if (!postUrl) {
+          alert("Please enter a valid Pinterest post URL");
+          return;
+        }
+
+        try {
+          const response = await fetch(`/scrape?url=${encodeURIComponent(postUrl)}`);
+          const data = await response.json();
+
+          document.getElementById("headline").innerText = data.headline;
+
+          // Check if it's a video or image
+          if (data.videoUrl) {
+            document.getElementById("post-media").innerHTML = `<video controls width="100%"><source src="${data.videoUrl}" type="video/mp4">Your browser does not support the video tag.</video>`;
+            document.getElementById("thumbnail").src = data.thumbnail;
+          } else if (data.imageUrl) {
+            document.getElementById("post-media").innerHTML = `<img src="${data.imageUrl}" alt="Pinterest Post Image" style="width: 100%"/>`;
+          }
+
+          document.getElementById("author").innerText = `Author: ${data.author}`;
+          document.getElementById("author-profile").innerText = `Author Profile: ${data.authorProfile}`;
+          document.getElementById("followers").innerText = `Followers: ${data.followers}`;
+          document.getElementById("comment-count").innerText = `Comments: ${data.commentCount}`;
+          document.getElementById("date").innerText = `Published on: ${new Date(data.uploadDate).toDateString()}`;
+          document.getElementById("description").innerText = data.description;
+          document.getElementById("post-details").style.display = "block";
+        } catch (error) {
+          console.error("Error fetching post data:", error);
+          alert("Failed to fetch post data. Please check the URL.");
+        }
+      }
+    </script>
+  </body>
+</html>
